@@ -17,3 +17,6 @@ PREFIX = "!"
 # Dummy exception for compatibility
 class InsufficientFundsException(Exception):
     pass
+
+# Add DEFAULT_BET for legacy compatibility
+DEFAULT_BET = 100

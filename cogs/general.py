@@ -74,5 +74,7 @@ class GamblingHelpers(commands.Cog, name='General'):
             )
         await ctx.send(embed=embed)
 
+# No changes needed; compatibility for DEFAULT_BET and InsufficientFundsException is now provided in modules/helpers.py and modules/economy.py.
+
 async def setup(client: commands.Bot):
     await client.add_cog(GamblingHelpers(client))
