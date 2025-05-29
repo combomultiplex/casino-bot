@@ -134,7 +134,7 @@ class Games(commands.Cog):
         
         # Generate coinflip image
         try:
-            coinflip_image = self.image_generator.create_coinflip_image(result, prediction, won, multiplier=2.0 if won else 1.0)
+            coinflip_image = self.image_generator.create_coinflip_image(result, prediction, won, multiplier=3.0 if won else 1.0)
             file = discord.File(coinflip_image, filename="coinflip.png")
             
             embed = create_game_embed("🪙 Coinflip")
@@ -144,7 +144,7 @@ class Games(commands.Cog):
             embed.add_field(name="Bet", value=format_currency(bet, guild.cashmoji), inline=False)
             
             if won:
-                winnings = bet * 2
+                winnings = bet * 3  # was 2
                 user.balance += winnings
                 user.update_stats('games_won', 1)
                 user.update_stats('total_won', winnings)
@@ -165,7 +165,7 @@ class Games(commands.Cog):
             embed.add_field(name="Bet", value=format_currency(bet, guild.cashmoji), inline=False)
             
             if won:
-                winnings = bet * 2
+                winnings = bet * 3  # was 2
                 user.balance += winnings
                 user.update_stats('games_won', 1)
                 user.update_stats('total_won', winnings)
@@ -266,6 +266,9 @@ class Games(commands.Cog):
         number = random.randint(0, 36)
         won, winnings = calculate_roulette_win(prediction.lower(), number, bet)
         multiplier = winnings // bet if won and bet > 0 else 1.0
+        # Determine color for display
+        red_numbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+        color = "🔴" if number in red_numbers else ("⚫" if number != 0 else "🟢")
         try:
             roulette_image = self.image_generator.create_roulette_wheel(number, prediction, multiplier=multiplier)
             file = discord.File(roulette_image, filename="roulette.png")

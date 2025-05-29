@@ -98,33 +98,33 @@ def calculate_roulette_win(prediction: str, number: int, bet: int) -> Tuple[bool
     is_black = number != 0 and not is_red
     is_even = number % 2 == 0 and number != 0
     is_odd = number % 2 == 1
-    
+
     # Check prediction
     won = False
     multiplier = 0
-    
+
     if prediction == str(number):
         won = True
-        multiplier = 35  # Single number bet
+        multiplier = 100  # Single number bet (was 35)
     elif prediction == "red" and is_red:
         won = True
-        multiplier = 1
+        multiplier = 3   # was 1
     elif prediction == "black" and is_black:
         won = True
-        multiplier = 1
+        multiplier = 3   # was 1
     elif prediction == "even" and is_even:
         won = True
-        multiplier = 1
+        multiplier = 2   # was 1
     elif prediction == "odd" and is_odd:
         won = True
-        multiplier = 1
+        multiplier = 2   # was 1
     elif prediction == "low" and 1 <= number <= 18:
         won = True
-        multiplier = 1
+        multiplier = 2   # was 1
     elif prediction == "high" and 19 <= number <= 36:
         won = True
-        multiplier = 1
-    
+        multiplier = 2   # was 1
+
     winnings = bet * multiplier if won else 0
     return won, winnings
 
@@ -132,31 +132,31 @@ def create_slots_reels() -> List[str]:
     """Generate slot machine reels"""
     symbols = ['🍒', '🍋', '🍊', '🍇', '🔔', '💎', '7️⃣']
     weights = [25, 20, 18, 15, 12, 8, 2]  # Lower weights for better symbols
-    
+
     return random.choices(symbols, weights=weights, k=3)
 
 def calculate_slots_win(reels: List[str], bet: int) -> Tuple[bool, int]:
     """Calculate slot machine winnings"""
     multipliers = {
-        '🍒': 2,
-        '🍋': 3,
-        '🍊': 4,
-        '🍇': 5,
-        '🔔': 10,
-        '💎': 25,
-        '7️⃣': 50
+        '🍒': 10,   # was 2
+        '🍋': 15,   # was 3
+        '🍊': 25,   # was 4
+        '🍇': 40,   # was 5
+        '🔔': 100,  # was 10
+        '💎': 250,  # was 25
+        '7️⃣': 777  # was 50
     }
-    
+
     # Check for three of a kind
     if reels[0] == reels[1] == reels[2]:
         symbol = reels[0]
         multiplier = multipliers.get(symbol, 1)
         return True, bet * multiplier
-    
+
     # Check for two of a kind (smaller payout)
     if reels[0] == reels[1] or reels[1] == reels[2] or reels[0] == reels[2]:
-        return True, bet // 2
-    
+        return True, bet * 2  # was bet // 2
+
     return False, 0
 
 def generate_crash_multiplier() -> float:
@@ -165,13 +165,13 @@ def generate_crash_multiplier() -> float:
     # Higher chance of low multipliers, rare high multipliers
     base = random.random()
     if base < 0.5:
-        return round(1.0 + base * 2, 2)  # 1.0 - 2.0
+        return round(1.0 + base * 5, 2)  # 1.0 - 3.5 (was 1.0 - 2.0)
     elif base < 0.8:
-        return round(2.0 + (base - 0.5) * 6, 2)  # 2.0 - 4.0
+        return round(3.5 + (base - 0.5) * 15, 2)  # 3.5 - 8.0 (was 2.0 - 4.0)
     elif base < 0.95:
-        return round(4.0 + (base - 0.8) * 20, 2)  # 4.0 - 7.0
+        return round(8.0 + (base - 0.8) * 60, 2)  # 8.0 - 17.0 (was 4.0 - 7.0)
     else:
-        return round(7.0 + (base - 0.95) * 100, 2)  # 7.0+ (very rare)
+        return round(17.0 + (base - 0.95) * 300, 2)  # 17.0+ (very rare, was 7.0+)
 
 async def wait_for_reaction(bot, message: discord.Message, user: discord.User, 
                           emojis: List[str], timeout: int = 30) -> Optional[str]:
