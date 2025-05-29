@@ -7,6 +7,9 @@ from config import Config
 from database import DataManager
 from modules.usermodel import UserModel, GuildModel
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 
@@ -113,7 +116,7 @@ class DiscordBot(commands.Bot):
         
         # Set bot presence
         await self.change_presence(
-            activity=discord.Game("🎰 Casino & Mining Bot"),
+            activity=discord.Game("🎰casino slots"),
             status=discord.Status.online
         )
     

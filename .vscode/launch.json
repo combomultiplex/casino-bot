@@ -6,11 +6,10 @@
     "configurations": [
 
         {
-            "name": "PowerShell: Launch Current File",
-            "type": "PowerShell",
+            "name": "Python Debugger: Python File",
+            "type": "debugpy",
             "request": "launch",
-            "script": "./bot.ps1",
-            "args": []
+            "program": "./main.py"
         }
     ]
 }
