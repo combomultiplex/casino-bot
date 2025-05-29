@@ -13,7 +13,7 @@ class Games(commands.Cog):
     
     def __init__(self, bot):
         self.bot = bot
-        self.active_games = {}  # Track active games
+        self.active_games = {}  # Track active games by user_id
         self.image_generator = CasinoImageGenerator()
     
     async def check_bet_validity(self, interaction: discord.Interaction, bet: int) -> bool:
@@ -84,8 +84,18 @@ class Games(commands.Cog):
             await interaction.response.send_message(embed=embed)
             return
         
+        # Register active game
+        self.active_games[interaction.user.id] = {
+            "type": "blackjack",
+            "player_cards": player_cards,
+            "dealer_cards": dealer_cards,
+            "bet": bet,
+        }
+        
         # Add action buttons
         view = BlackjackView(self.bot, user, guild, dealer_cards, player_cards, bet)
+        view._parent_games_cog = self  # Pass reference for cleanup
+        view._user_id = interaction.user.id
         await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command(name="coinflip", description="Flip a coin")
@@ -337,17 +347,79 @@ class Games(commands.Cog):
         else:
             # Manual mode with view
             view = CrashView(self.bot, user, guild, bet, crash_multiplier)
+            # Register active game
+            self.active_games[interaction.user.id] = {
+                "type": "crash",
+                "view": view,
+                "crash_multiplier": crash_multiplier,
+            }
+            view._parent_games_cog = self  # Pass reference for cleanup
+            view._user_id = interaction.user.id
             embed = create_game_embed("🚀 Crash Game")
             embed.add_field(name="Bet", value=format_currency(bet, guild.cashmoji), inline=True)
             embed.add_field(name="Current Multiplier", value="1.00x", inline=True)
             embed.add_field(name="Status", value="🟢 Flying...", inline=False)
-            
             await interaction.response.send_message(embed=embed, view=view)
             view.start_game(interaction)
             return
         
         self.bot.data_manager.update_user(user)
         await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="view_multiplier", description="View your current crash game multiplier")
+    async def view_multiplier(self, interaction: discord.Interaction):
+        """Show the current crash multiplier for your active crash game"""
+        user_id = interaction.user.id
+        active = self.active_games.get(user_id)
+        if not active or active.get("type") != "crash":
+            await interaction.response.send_message(
+                embed=create_error_embed("No Active Crash Game", "You are not currently playing a crash game."),
+                ephemeral=True
+            )
+            return
+        multiplier = active.get("view").current_multiplier if active.get("view") else None
+        crash_point = active.get("crash_multiplier")
+        if multiplier is None:
+            await interaction.response.send_message(
+                embed=create_error_embed("Unavailable", "Multiplier data is not available."),
+                ephemeral=True
+            )
+            return
+        embed = create_embed("🚀 Crash Multiplier", color=EmbedColors.GAME)
+        embed.add_field(name="Current Multiplier", value=f"{multiplier:.2f}x", inline=True)
+        embed.add_field(name="Crash Point", value=f"{crash_point:.2f}x", inline=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @app_commands.command(name="console_focus", description="Show your current active game")
+    async def console_focus(self, interaction: discord.Interaction):
+        """Show the user's current active game and its status"""
+        user_id = interaction.user.id
+        active = self.active_games.get(user_id)
+        if not active:
+            await interaction.response.send_message(
+                embed=create_error_embed("No Active Game", "You are not currently playing any game."),
+                ephemeral=True
+            )
+            return
+        game_type = active.get("type", "unknown").title()
+        embed = create_embed(f"🎮 Console Focus: {game_type}", color=EmbedColors.GAME)
+        if game_type == "Crash":
+            multiplier = active.get("view").current_multiplier if active.get("view") else None
+            crash_point = active.get("crash_multiplier")
+            embed.add_field(name="Current Multiplier", value=f"{multiplier:.2f}x" if multiplier else "N/A", inline=True)
+            embed.add_field(name="Crash Point", value=f"{crash_point:.2f}x", inline=True)
+        elif game_type == "Blackjack":
+            player_cards = active.get("player_cards")
+            dealer_cards = active.get("dealer_cards")
+            bet = active.get("bet")
+            embed.add_field(name="Your Cards", value=f"{format_cards(player_cards)}", inline=True)
+            embed.add_field(name="Dealer Cards", value=f"{dealer_cards[0][0]} ❓", inline=True)
+            embed.add_field(name="Bet", value=str(bet), inline=True)
+        else:
+            embed.add_field(name="Status", value="Game in progress...", inline=False)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# --- Patch: Remove active game on game end for blackjack and crash ---
 
 class BlackjackView(discord.ui.View):
     """View for blackjack game interactions"""
@@ -532,6 +604,10 @@ class CrashView(discord.ui.View):
         embed.add_field(name="Cash Out Multiplier", value=f"{self.current_multiplier}x", inline=True)
         embed.add_field(name="Crash Point", value=f"{self.crash_multiplier}x", inline=True)
         embed.add_field(name="Winnings", value=format_currency(winnings, self.guild.cashmoji), inline=False)
+        
+        # Remove active game
+        if hasattr(self, "_parent_games_cog"):
+            self._parent_games_cog.active_games.pop(getattr(self, "_user_id", None), None)
         
         self.bot.data_manager.update_user(self.user)
         await interaction.response.edit_message(embed=embed, view=self)
