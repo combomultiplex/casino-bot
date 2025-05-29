@@ -14,6 +14,6 @@ python -m venv .venv
 python -m pip install --upgrade pip
 
 # Install the required packages
-pip install discord.py python-dotenv pillow
+pip install discord.py python-dotenv pillow PyNaCl
 # Run the Python script using the virtual environment's Python interpreter
 & ".venv\Scripts\python.exe" "C:\Users\Admin\Documents\GitHub\casino-bot\main.py"
