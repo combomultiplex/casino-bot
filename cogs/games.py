@@ -15,6 +15,14 @@ class Games(commands.Cog):
         self.bot = bot
         self.active_games = {}  # Track active games by user_id
         self.image_generator = CasinoImageGenerator()
+        # Register a callback for real-time achievements
+        self.image_generator.set_callback(self.achievement_callback)
+
+    def achievement_callback(self, game_type: str, info: dict):
+        # Real-time achievement/event callback
+        # Example: log, trigger achievement, or notify user
+        # This is a stub; implement as needed
+        pass
     
     async def check_bet_validity(self, interaction: discord.Interaction, bet: int) -> bool:
         """Check if bet is valid and user has sufficient funds"""
@@ -126,7 +134,7 @@ class Games(commands.Cog):
         
         # Generate coinflip image
         try:
-            coinflip_image = self.image_generator.create_coinflip_image(result, prediction, won)
+            coinflip_image = self.image_generator.create_coinflip_image(result, prediction, won, multiplier=2.0 if won else 1.0)
             file = discord.File(coinflip_image, filename="coinflip.png")
             
             embed = create_game_embed("🪙 Coinflip")
@@ -188,10 +196,9 @@ class Games(commands.Cog):
         # Spin reels
         reels = create_slots_reels()
         won, winnings = calculate_slots_win(reels, bet)
-        
-        # Generate slot machine image
+        multiplier = winnings // bet if won and bet > 0 else 1.0
         try:
-            slot_image = self.image_generator.create_slot_machine_image(reels, won)
+            slot_image = self.image_generator.create_slot_machine_image(reels, won, multiplier=multiplier)
             file = discord.File(slot_image, filename="slots.png")
             
             embed = create_game_embed("🎰 Slot Machine")
@@ -258,14 +265,9 @@ class Games(commands.Cog):
         # Spin roulette
         number = random.randint(0, 36)
         won, winnings = calculate_roulette_win(prediction.lower(), number, bet)
-        
-        # Determine color
-        red_numbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
-        color = "🔴" if number in red_numbers else "⚫" if number != 0 else "🟢"
-        
-        # Generate roulette wheel image
+        multiplier = winnings // bet if won and bet > 0 else 1.0
         try:
-            roulette_image = self.image_generator.create_roulette_wheel(number, prediction)
+            roulette_image = self.image_generator.create_roulette_wheel(number, prediction, multiplier=multiplier)
             file = discord.File(roulette_image, filename="roulette.png")
             
             embed = create_game_embed("🎡 Roulette")
@@ -344,6 +346,8 @@ class Games(commands.Cog):
                 embed.add_field(name="Auto Cash Out", value=f"{auto_cashout}x", inline=True)
                 embed.add_field(name="Crash Point", value=f"{crash_multiplier}x", inline=True)
                 embed.add_field(name="Result", value="Crashed before cash out!", inline=False)
+                # Optionally generate crash graph with win multiplier
+                # crash_img = self.image_generator.create_crash_graph(auto_cashout, crashed=False, win_multiplier=auto_cashout)
         else:
             # Manual mode with view
             view = CrashView(self.bot, user, guild, bet, crash_multiplier)

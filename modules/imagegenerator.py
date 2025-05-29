@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import random
 import io
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Callable, Optional
 
 class CasinoImageGenerator:
     """Generate visual images for casino games"""
@@ -11,8 +11,20 @@ class CasinoImageGenerator:
         self.card_width = 100
         self.card_height = 140
         self.slot_size = 120
-        
-    def create_slot_machine_image(self, reels: List[str], won: bool = False) -> io.BytesIO:
+        self._callback: Optional[Callable[[str, dict], None]] = None
+
+    def set_callback(self, callback: Callable[[str, dict], None]):
+        """Set a callback to be called after image generation.
+        Args:
+            callback: function(game_type: str, info: dict)
+        """
+        self._callback = callback
+
+    def _notify(self, game_type: str, info: dict):
+        if self._callback:
+            self._callback(game_type, info)
+
+    def create_slot_machine_image(self, reels: List[str], won: bool = False, multiplier: float = 1.0) -> io.BytesIO:
         """Create animated slot machine image"""
         # Create base image
         width, height = 400, 300
@@ -47,17 +59,21 @@ class CasinoImageGenerator:
         result_text = "🎉 WINNER! 🎉" if won else "Try Again!"
         result_color = '#00FF00' if won else '#FF6B6B'
         draw.text((width//2, 240), result_text, fill=result_color, font=font_large, anchor="mt")
+        # Draw multiplier if > 1
+        if multiplier > 1:
+            draw.text((width//2, 265), f"Multiplier: {multiplier}x", fill='#FFD700', font=font_large, anchor="mt")
         
         # Save to BytesIO
         img_buffer = io.BytesIO()
         img.save(img_buffer, format='PNG')
         img_buffer.seek(0)
+        self._notify("slots", {"reels": reels, "won": won, "multiplier": multiplier})
         return img_buffer
     
     def create_blackjack_table(self, player_cards: List[Tuple[str, int]], 
                               dealer_cards: List[Tuple[str, int]], 
                               player_value: int, dealer_value: int, 
-                              game_over: bool = False) -> io.BytesIO:
+                              game_over: bool = False, multiplier: float = 1.0) -> io.BytesIO:
         """Create blackjack table visualization"""
         width, height = 600, 400
         img = Image.new('RGB', (width, height), color='#0F5132')
@@ -88,11 +104,21 @@ class CasinoImageGenerator:
         draw.text((width//2, 250), "PLAYER", fill='#FFFFFF', font=font_medium, anchor="mt")
         self._draw_cards(draw, player_cards, width//2 - len(player_cards)*25, 270, True)
         draw.text((width//2, 330), f"Value: {player_value}", fill='#FFFFFF', font=font_medium, anchor="mt")
+        # Draw multiplier if > 1
+        if multiplier > 1:
+            draw.text((width//2, 360), f"Multiplier: {multiplier}x", fill='#FFD700', font=font_medium, anchor="mt")
         
         # Save to BytesIO
         img_buffer = io.BytesIO()
         img.save(img_buffer, format='PNG')
         img_buffer.seek(0)
+        self._notify("blackjack", {
+            "player_cards": player_cards,
+            "dealer_cards": dealer_cards,
+            "player_value": player_value,
+            "dealer_value": dealer_value,
+            "multiplier": multiplier
+        })
         return img_buffer
     
     def _draw_cards(self, draw: ImageDraw, cards: List[Tuple[str, int]], 
@@ -125,7 +151,7 @@ class CasinoImageGenerator:
                 draw.text((x+card_width//2, y+card_height//2), card_name, 
                          fill=card_color, font=font_small, anchor="mm")
     
-    def create_roulette_wheel(self, winning_number: int, prediction: str) -> io.BytesIO:
+    def create_roulette_wheel(self, winning_number: int, prediction: str, multiplier: float = 1.0) -> io.BytesIO:
         """Create roulette wheel visualization"""
         size = 300
         img = Image.new('RGB', (size, size), color='#0F5132')
@@ -183,14 +209,22 @@ class CasinoImageGenerator:
                  font=font_large, anchor="mt")
         draw.text((center, size-10), f"Bet: {prediction}", fill='#FFFFFF', 
                  font=font_medium, anchor="mt")
+        # Draw multiplier if > 1
+        if multiplier > 1:
+            draw.text((center, size-50), f"Multiplier: {multiplier}x", fill='#FFD700', font=font_medium, anchor="mt")
         
         # Save to BytesIO
         img_buffer = io.BytesIO()
         img.save(img_buffer, format='PNG')
         img_buffer.seek(0)
+        self._notify("roulette", {
+            "winning_number": winning_number,
+            "prediction": prediction,
+            "multiplier": multiplier
+        })
         return img_buffer
     
-    def create_coinflip_image(self, result: str, prediction: str, won: bool) -> io.BytesIO:
+    def create_coinflip_image(self, result: str, prediction: str, won: bool, multiplier: float = 1.0) -> io.BytesIO:
         """Create coinflip visualization"""
         size = 300
         img = Image.new('RGB', (size, size), color='#0F5132')
@@ -233,14 +267,23 @@ class CasinoImageGenerator:
         outcome_color = '#00FF00' if won else '#FF6B6B'
         draw.text((center, size-20), outcome_text, fill=outcome_color, 
                  font=font_large, anchor="mt")
+        # Draw multiplier if > 1
+        if multiplier > 1:
+            draw.text((center, size-80), f"Multiplier: {multiplier}x", fill='#FFD700', font=font_medium, anchor="mt")
         
         # Save to BytesIO
         img_buffer = io.BytesIO()
         img.save(img_buffer, format='PNG')
         img_buffer.seek(0)
+        self._notify("coinflip", {
+            "result": result,
+            "prediction": prediction,
+            "won": won,
+            "multiplier": multiplier
+        })
         return img_buffer
     
-    def create_crash_graph(self, current_multiplier: float, crashed: bool = False) -> io.BytesIO:
+    def create_crash_graph(self, current_multiplier: float, crashed: bool = False, win_multiplier: float = 1.0) -> io.BytesIO:
         """Create crash game multiplier graph"""
         width, height = 400, 300
         img = Image.new('RGB', (width, height), color='#1a1a1a')
@@ -287,11 +330,19 @@ class CasinoImageGenerator:
         status_color = '#FF0000' if crashed else '#00FF00'
         draw.text((width//2, height-30), status, fill=status_color, 
                  font=font_medium, anchor="mt")
+        # Draw win multiplier if > 1
+        if win_multiplier > 1:
+            draw.text((width//2, height-55), f"Multiplier: {win_multiplier}x", fill='#FFD700', font=font_medium, anchor="mt")
         
         # Save to BytesIO
         img_buffer = io.BytesIO()
         img.save(img_buffer, format='PNG')
         img_buffer.seek(0)
+        self._notify("crash", {
+            "current_multiplier": current_multiplier,
+            "crashed": crashed,
+            "win_multiplier": win_multiplier
+        })
         return img_buffer
     
     def create_mining_result(self, material: str, rarity: str, reward: int) -> io.BytesIO:
@@ -338,4 +389,9 @@ class CasinoImageGenerator:
         img_buffer = io.BytesIO()
         img.save(img_buffer, format='PNG')
         img_buffer.seek(0)
+        self._notify("mining", {
+            "material": material,
+            "rarity": rarity,
+            "reward": reward
+        })
         return img_buffer
