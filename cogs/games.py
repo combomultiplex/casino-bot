@@ -4,9 +4,9 @@ from discord import app_commands
 import random
 import asyncio
 from datetime import timedelta
-from utils import *
+from modules.utils import *
 from config import Config
-from image_generator import CasinoImageGenerator
+from modules.imagegenerator import CasinoImageGenerator
 
 class Games(commands.Cog):
     """Gaming commands for the Discord bot"""

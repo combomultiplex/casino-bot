@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from utils import *
+from modules.utils import *
 
 class Help(commands.Cog):
     """Help and utility commands"""

@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import random
 from datetime import timedelta
-from utils import *
+from modules.utils import *
 from config import Config
 
 class Mining(commands.Cog):

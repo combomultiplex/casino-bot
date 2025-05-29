@@ -4,8 +4,8 @@ import asyncio
 import logging
 import os
 from config import Config
-from database import DatabaseManager
-from usermodel import UserModel, GuildModel
+from database import DataManager
+from modules.usermodel import UserModel, GuildModel
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +23,7 @@ class DiscordBot(commands.Bot):
             help_command=None
         )
         
-        self.db_manager = DatabaseManager()
+        self.db_manager = DataManager()
         
         # Compatibility wrapper methods
         def get_user(user_id: int, guild_id: int):

@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from utils import *
+from modules.utils import *
 from config import Config
 
 class GuildConfig(commands.Cog):

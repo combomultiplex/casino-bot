@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
 from typing import Optional
 import math
-from database import DatabaseManager, User as DBUser, Guild as DBGuild
+from database import DataManager
+from models import User as DBUser, Guild as DBGuild
 from config import Config
 
 class UserModel:
     """User model wrapper for compatibility with existing code"""
     
-    def __init__(self, db_user: DBUser, db_manager: DatabaseManager):
+    def __init__(self, db_user: DBUser, db_manager: DataManager):
         self._db_user = db_user
         self._db_manager = db_manager
     
@@ -166,7 +167,7 @@ class UserModel:
 class GuildModel:
     """Guild model wrapper for compatibility with existing code"""
     
-    def __init__(self, db_guild: DBGuild, db_manager: DatabaseManager):
+    def __init__(self, db_guild: DBGuild, db_manager: DataManager):
         self._db_guild = db_guild
         self._db_manager = db_manager
     
